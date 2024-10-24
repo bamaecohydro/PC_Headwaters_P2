@@ -68,11 +68,11 @@ df <- df %>%
 #Remove -9999
 df <- df %>% 
   mutate(
-    streamorde = if_else(streamorde>0,   streamorde, NA), 
-    areasqkm   = if_else(areasqkm>0,     areasqkm,   NA),
-    totdasqkm  = if_else(totdasqkm>0,    totdasqkm,  NA), 
-    slope      = if_else(slope>0,        slope,      NA), 
-    slopelenkm = if_else(slopelenkm > 0, slopelenkm, NA)) 
+    streamorde = if_else(streamorde >0,  streamorde, NA), 
+    areasqkm   = if_else(areasqkm   >0,  areasqkm,   NA),
+    totdasqkm  = if_else(totdasqkm  >0,  totdasqkm,  NA), 
+    slope      = if_else(slope      >0,  slope,      NA), 
+    slopelenkm = if_else(slopelenkm >0,  slopelenkm,  NA)) 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Step 3: Estimate metrics by HUC ----------------------------------------------
@@ -92,7 +92,7 @@ df <- df %>%
 #Create wide tibble
 df <- df %>% 
   mutate(
-    SO12 = if_else(SO12 == 1, "headwater", "downstream")
+    SO12 = if_else(SO12 == 1, "SO12", "SO3plus")
   ) %>% 
   pivot_wider(
     names_from = SO12, 
