@@ -99,6 +99,21 @@ df <- df %>%
     values_from = c(stream_slope_mean, stream_slope_cv, stream_length_km, area_km2, stream_density))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Step 4: Export csv -----------------------------------------------------------
+# Step 4: Check with current dataset -------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#bring in existing dataset
+check <- read_csv('data//no_Hand_class_headwaters_and_downstream_extracts_080824.csv')
+
+#isolate HUC12
+check <- check %>% 
+  select(huc12) %>% 
+  rename(HUC12 = huc12) %>% 
+  distinct() %>% 
+  mutate(check = 1)
+  
+df %>% left_join(., check) %>% select(HUC12, check) %>% View()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Step 5: Export csv -----------------------------------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 write_csv(df, 'output//vaa_huc12.csv')
