@@ -12,7 +12,6 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Step 1: Setup workspace ------------------------------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 # Clear memory
 remove(list=ls())
 
@@ -42,29 +41,20 @@ pnts <- read_csv('output//vaa.csv',
 #Convert to spatial points
 pnts <- pnts[is.na(pnts$XCoord)!=T,]
 pnts <- st_as_sf(pnts, coords = c("XCoord", "YCoord"), crs = '+proj=longlat +datum=WGS84 +no_defs')
-pnts <- pnts %>% select(vpuid, reachcode)
+pnts <- pnts %>% select(reachcode)
 
 # load WBD dataset
 sheds <- st_read('data//NHDPlus_H_National_Release_1_GDB//NHDPlus_H_National_Release_1_GDB.gdb', layer = 'WBDHU12')
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Step 2: Convert VAA table to spatial points ----------------------------------
+# Step 2: Overlay reaches with HUC12s ------------------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #Create function to spatial join by huc04
+fun <- function(huc04){
 
-#~~~~~~~~~~~~~~
-# it looks like VPUID is NULL throughout HUC12 dataset. Fall back to huc4
-# as unique id for analysis
-# going to bed....
-#~~~~~~~~~~~~~~
-
-
-
-
-fun <- function(vpu_id){
   #reduce size of data
-  pnts <- pnts %>% filter(vpuid == vpu_id)
-  sheds <- sheds %>% filter(vpuid == vpu_id) %>% select(huc12)
+  pnts  <- pnts  %>% filter(substr(reachcode,1,4) == huc04)
+  sheds <- sheds %>% filter(substr(huc12,1,4)     == huc04) %>% select(huc12)
   
   #convert spatial reference system
   sheds <- st_transform(sheds, st_crs(pnts))
@@ -76,5 +66,18 @@ fun <- function(vpu_id){
   pnts %>% st_drop_geometry()
 }
 
-#Create list of VPU_IDs
-vpu_ids <- sheds %>% st_drop_geometry %>% select(vpuid) %>% pull()
+#Create list of huc04s
+huc04s <- sheds %>% st_drop_geometry() %>% mutate(huc04 = substr(huc12, 1,4)) %>% select(huc04) %>% distinct()
+
+#apply 
+t0 <- Sys.time()
+output <- lapply(
+  X = huc04s$huc04, 
+  FUN = fun) %>% bind_rows()
+tf <- Sys.time()
+tf-t0
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Step 3: Export cross walk table ----------------------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+write.csv(output, "output//reachcode2huc12.csv")
