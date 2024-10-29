@@ -75,7 +75,8 @@ output <- lapply(
   X = huc04s$huc04, 
   FUN = fun) %>% bind_rows()
 tf <- Sys.time()
-tf-t0
+tf-t0 
+# This took 19.1 minutes
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Step 3: Export cross walk table ----------------------------------------------

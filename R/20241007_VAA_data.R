@@ -39,8 +39,12 @@ df <- read_csv('output//vaa.csv',
           "qincrfma","arqnavma","petma","qlossma","qgadjma","qgnavma","gageadjma",
           "avgqadjma","gageidma","gageqma","Shape_Length"))
 
+#Load cross walk table between reach code and huc12
+reachcode_huc12 <- read_csv("output//reachcode2huc12.csv")
+
 #back that shit up
 backup <- df
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Step 2: tidy data ------------------------------------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,14 +60,10 @@ df <- df %>%
     slopelenkm
   )
 
-#Define HUC02 and HUC12
-df <- df %>% 
-  #Define HUC levels
-  mutate(HUC12 = substr(reachcode, 1,12)) 
-
 #Define headwaters
 df <- df %>% 
-  mutate(SO12 = if_else(streamorde <=2, 1, 0))
+  mutate(SO12 = if_else(streamorde <=2, 1, 0)) %>% 
+  drop_na(SO12)
 
 #Remove -9999
 df <- df %>% 
@@ -73,6 +73,11 @@ df <- df %>%
     totdasqkm  = if_else(totdasqkm  >0,  totdasqkm,  NA), 
     slope      = if_else(slope      >0,  slope,      NA), 
     slopelenkm = if_else(slopelenkm >0,  slopelenkm,  NA)) 
+
+#add huc12 data
+reachcode_huc12 <- reachcode_huc12 %>% select(reachcode, huc12) %>% distinct()
+df <- df %>% left_join(., reachcode_huc12)
+df <- df %>% rename(HUC12=huc12)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Step 3: Estimate metrics by HUC ----------------------------------------------
@@ -98,6 +103,8 @@ df <- df %>%
     names_from = SO12, 
     values_from = c(stream_slope_mean, stream_slope_cv, stream_length_km, area_km2, stream_density))
 
+#Remove NA cols
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Step 4: Check with current dataset -------------------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,9 +118,13 @@ check <- check %>%
   distinct() %>% 
   mutate(check = 1)
   
-df %>% left_join(., check) %>% select(HUC12, check) %>% View()
+df %>% left_join(., check) %>% select(HUC12, check) %>% select(check) %>% na.omit() %>% nrow()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Step 5: Export csv -----------------------------------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-write_csv(df, 'output//vaa_huc12.csv')
+write_csv(df, 'output//vaa_headwaters.csv')
+
+#--need to work on the "NA" collumn
+
+
